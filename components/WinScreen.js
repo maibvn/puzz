@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import { View, Image, StyleSheet, Animated, Text } from "react-native";
+import theme from "../theme";
 
-export default function WinScreen({ width, height, image }) {
+export default function WinScreen({ width, height, image, completionStats }) {
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -25,39 +26,71 @@ export default function WinScreen({ width, height, image }) {
       }),
     ]).start();
 
-    // Very visible golden glow pulse effect
+    // Fast, subtle golden glow that doesn't obscure the image
     Animated.sequence([
       Animated.timing(glowAnim, {
-        toValue: 1,
-        duration: 400,
+        toValue: 0.6,
+        duration: 200,
         useNativeDriver: true,
       }),
       Animated.timing(glowAnim, {
-        toValue: 0.7,
-        duration: 600,
+        toValue: 0.4,
+        duration: 300,
         useNativeDriver: true,
       }),
       Animated.timing(glowAnim, {
-        toValue: 0.5,
+        toValue: 0.2,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      // Fade out quickly to show clean original image
+      Animated.timing(glowAnim, {
+        toValue: 0,
         duration: 400,
         useNativeDriver: true,
       }),
     ]).start();
 
-    // Faster, subtle rotation effect that returns to 0
+    // Fast, subtle rotation effect that returns to 0
     Animated.sequence([
       Animated.timing(rotateAnim, {
         toValue: 1,
-        duration: 600,
+        duration: 300,
         useNativeDriver: true,
       }),
       Animated.timing(rotateAnim, {
         toValue: 0,
-        duration: 600,
+        duration: 300,
         useNativeDriver: true,
       }),
     ]).start();
   }, [scaleAnim, glowAnim, rotateAnim]);
+
+  const renderStars = () => {
+    const { stars = 0 } = completionStats || {};
+    return (
+      <View style={styles.starsContainer}>
+        {[1, 2, 3].map((star) => (
+          <Text
+            key={star}
+            style={[
+              styles.star,
+              {
+                color:
+                  star <= stars ? theme.colors.accent : theme.colors.surface,
+                textShadowColor:
+                  star <= stars ? theme.colors.text : "transparent",
+                textShadowOffset: { width: 1, height: 1 },
+                textShadowRadius: 2,
+              },
+            ]}
+          >
+            ⭐
+          </Text>
+        ))}
+      </View>
+    );
+  };
 
   const rotate = rotateAnim.interpolate({
     inputRange: [0, 1],
@@ -118,7 +151,7 @@ export default function WinScreen({ width, height, image }) {
           ]}
         />
 
-        {/* Sparkle overlay */}
+        {/* Subtle sparkle overlay */}
         <Animated.View
           style={[
             styles.sparkleOverlay,
@@ -138,8 +171,11 @@ export default function WinScreen({ width, height, image }) {
           },
         ]}
       >
-        <Text style={styles.successText}>🎉 Perfect! 🎉</Text>
-        <Text style={styles.subText}>Puzzle Completed!</Text>
+        <Text style={styles.successText}>🎉 Level Complete! 🎉</Text>
+        {renderStars()}
+        {completionStats && (
+          <Text style={styles.timeText}>Time: {completionStats.time}s</Text>
+        )}
       </Animated.View>
     </View>
   );
@@ -155,37 +191,30 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -20, // Center the glow on the image
     left: -20,
-    borderRadius: 20,
-    backgroundColor: "gold", // Solid bright gold
-    borderWidth: 5,
-    borderColor: "yellow",
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.glowYellow,
+    borderWidth: 2,
+    borderColor: theme.colors.borderPink,
     zIndex: 10, // Make sure it's on top
   },
   glowInner: {
     position: "absolute",
     top: -10, // Center the glow on the image
     left: -10,
-    borderRadius: 15,
-    backgroundColor: "yellow", // Solid bright yellow
-    borderWidth: 3,
-    borderColor: "gold",
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.glowPink,
+    borderWidth: 1,
+    borderColor: theme.colors.borderYellow,
     zIndex: 9, // Make sure it's on top
   },
   imageContainer: {
-    borderRadius: 10,
+    borderRadius: theme.borderRadius.lg,
     overflow: "visible", // Allow glow effects to show outside
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 12,
+    ...theme.shadows.lg,
     position: "relative",
   },
   image: {
-    borderRadius: 10,
+    borderRadius: theme.borderRadius.lg,
     overflow: "hidden", // Keep image cropped properly
   },
   sparkleOverlay: {
@@ -194,28 +223,43 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 10,
+    backgroundColor: theme.colors.sparkle,
+    borderRadius: theme.borderRadius.lg,
   },
   messageContainer: {
     position: "absolute",
-    bottom: -80,
+    bottom: -100,
     alignItems: "center",
   },
   successText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "gold",
+    fontSize: theme.typography.sizes.xl,
+    fontWeight: theme.typography.weights.extrabold,
+    color: theme.colors.accent,
     textAlign: "center",
-    textShadowColor: "#000",
+    textShadowColor: theme.colors.text,
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
+    marginBottom: theme.spacing.sm,
+  },
+  starsContainer: {
+    flexDirection: "row",
+    marginBottom: theme.spacing.xs,
+  },
+  star: {
+    fontSize: theme.typography.sizes.xl,
+    marginHorizontal: theme.spacing.xs / 2,
+  },
+  timeText: {
+    fontSize: theme.typography.sizes.md,
+    color: theme.colors.textLight,
+    fontWeight: theme.typography.weights.semibold,
+    textAlign: "center",
   },
   subText: {
-    fontSize: 16,
-    color: "#666",
-    fontWeight: "600",
+    fontSize: theme.typography.sizes.md,
+    color: theme.colors.textLight,
+    fontWeight: theme.typography.weights.semibold,
     textAlign: "center",
-    marginTop: 4,
+    marginTop: theme.spacing.xs,
   },
 });

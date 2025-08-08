@@ -1,6 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import Tile from "./Tile";
+import theme from "../theme";
 
 export default function PuzzleBoard({
   tiles,
@@ -140,8 +141,9 @@ const styles = StyleSheet.create({
   },
   board: {
     flexDirection: "column",
-    backgroundColor: "#ccc",
-    borderRadius: 10,
+    backgroundColor: theme.colors.emptySlot,
+    borderRadius: theme.borderRadius.md,
     overflow: "hidden",
+    ...theme.shadows.md,
   },
 });

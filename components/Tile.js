@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Image, StyleSheet, PanResponder } from "react-native";
+import theme from "../theme";
 
 export default function Tile({
   tile,
@@ -43,9 +44,9 @@ export default function Tile({
           {
             width: size,
             height: size,
-            backgroundColor: "#fafafa",
+            backgroundColor: theme.colors.emptySlot,
             borderWidth: 2,
-            borderColor: "#aaa",
+            borderColor: theme.colors.tileBorder,
             borderStyle: "dashed",
             justifyContent: "center",
             alignItems: "center",
@@ -91,6 +92,8 @@ const styles = StyleSheet.create({
     margin: 1,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 4,
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.colors.tileBackground,
+    ...theme.shadows.sm,
   },
 });
