@@ -1,11 +1,11 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Text } from "react-native";
 import { AppProvider, useApp } from "./contexts/AppProvider";
 import HomeScreen from "./screens/HomeScreen";
 import GameScreen from "./screens/GameScreen";
+import CollectionScreen from "./screens/CollectionScreen";
 import WinScreen from "./components/WinScreen";
-import PastelButton from "./components/PastelButton";
-import { LEVELS } from "./data/levels";
+import { Button } from "./components";
 import theme from "./theme";
 
 const PUZZLE_SIZE = 320;
@@ -17,26 +17,24 @@ function AppContent() {
     currentLevel,
     setGameState,
     setCurrentLevel,
+    setLastPlayedLevel,
     levelProgress,
     completionStats,
+    playerLevels,
   } = useApp();
 
   const handleLevelSelect = (level) => {
     setCurrentLevel(level);
+    setLastPlayedLevel(level); // Track the last played level
     setGameState("playing");
-  };
-
-  const handlePlayAgain = () => {
-    if (currentLevel) {
-      setGameState("playing");
-    }
   };
 
   const handleNextLevel = () => {
     const nextLevelId = currentLevel.id + 1;
-    const nextLevel = LEVELS.find((l) => l.id === nextLevelId);
+    const nextLevel = playerLevels.find((l) => l.id === nextLevelId);
     if (nextLevel && levelProgress[nextLevelId]?.unlocked) {
       setCurrentLevel(nextLevel);
+      setLastPlayedLevel(nextLevel); // Update last played level
       setGameState("playing");
     } else {
       setGameState("levelSelect");
@@ -60,28 +58,28 @@ function AppContent() {
     return <GameScreen onBackToLevels={handleBackToLevels} />;
   }
 
+  if (gameState === "collection") {
+    return <CollectionScreen />;
+  }
+
   if (gameState === "won") {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, styles.darkContainer]}>
         <View style={styles.winContainer}>
           <WinScreen
             width={PUZZLE_SIZE}
             height={PUZZLE_BOARD_HEIGHT}
             image={currentLevel?.image}
+            levelName={currentLevel?.name}
             completionStats={completionStats}
           />
           <View style={styles.winButtons}>
-            <PastelButton
-              title="Play Again"
-              onPress={handlePlayAgain}
-              variant="primary"
-              style={{ marginRight: theme.spacing.md }}
-            />
-            <PastelButton
+            <Button
               title="Next Level"
               onPress={handleNextLevel}
               variant="success"
-              style={{ marginRight: theme.spacing.md }}
+              size="lg"
+              iconName="arrow-forward"
             />
           </View>
         </View>
@@ -105,6 +103,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+  darkContainer: {
+    backgroundColor: "rgba(0, 0, 0, 0.9)", // Dark background for whole app during win
+  },
   winContainer: {
     flex: 1,
     justifyContent: "center",
@@ -112,10 +113,9 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
   },
   winButtons: {
-    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: theme.spacing.xxl,
-    flexWrap: "wrap",
+    marginTop: 80, // Custom large spacing to move button down
+    width: "100%", // Full width to ensure centering
   },
 });
