@@ -2,7 +2,13 @@ import React, { useEffect, useRef } from "react";
 import { View, Image, StyleSheet, Animated, Text } from "react-native";
 import theme from "../theme";
 
-export default function WinScreen({ width, height, image, completionStats }) {
+export default function WinScreen({
+  width,
+  height,
+  image,
+  completionStats,
+  levelName,
+}) {
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -171,11 +177,8 @@ export default function WinScreen({ width, height, image, completionStats }) {
           },
         ]}
       >
-        <Text style={styles.successText}>🎉 Level Complete! 🎉</Text>
+        <Text style={styles.successText}>Great, you've got {levelName}!</Text>
         {renderStars()}
-        {completionStats && (
-          <Text style={styles.timeText}>Time: {completionStats.time}s</Text>
-        )}
       </Animated.View>
     </View>
   );
@@ -186,6 +189,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start", // Align to top instead of center
     position: "relative",
+    padding: theme.spacing.lg,
   },
   glowOuter: {
     position: "absolute",
@@ -228,17 +232,18 @@ const styles = StyleSheet.create({
   },
   messageContainer: {
     position: "absolute",
-    bottom: -100,
+    bottom: -50,
     alignItems: "center",
   },
   successText: {
     fontSize: theme.typography.sizes.xl,
     fontWeight: theme.typography.weights.extrabold,
-    color: theme.colors.accent,
+    fontFamily: theme.typography.fontFamily.regular,
+    color: "#FFFFFF", // White text for dark background
     textAlign: "center",
-    textShadowColor: theme.colors.text,
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
+    textShadowColor: "rgba(0, 0, 0, 0.8)",
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
     marginBottom: theme.spacing.sm,
   },
   starsContainer: {
@@ -248,12 +253,6 @@ const styles = StyleSheet.create({
   star: {
     fontSize: theme.typography.sizes.xl,
     marginHorizontal: theme.spacing.xs / 2,
-  },
-  timeText: {
-    fontSize: theme.typography.sizes.md,
-    color: theme.colors.textLight,
-    fontWeight: theme.typography.weights.semibold,
-    textAlign: "center",
   },
   subText: {
     fontSize: theme.typography.sizes.md,

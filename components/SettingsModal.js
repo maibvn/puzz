@@ -1,6 +1,6 @@
 import React, { useState, useCallback, memo } from "react";
 import { Modal, View, Text, Pressable, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Icon from "./Icon";
 import { useApp } from "../contexts/AppProvider";
 import theme from "../theme";
 
@@ -42,7 +42,7 @@ const SettingsModal = memo(function SettingsModal({ visible, onClose }) {
                 pressed && { opacity: 0.6, transform: [{ scale: 0.95 }] },
               ]}
             >
-              <Ionicons name="close" size={24} color={theme.colors.text} />
+              <Icon name="close" size={24} variant="navigationButton" bright />
             </Pressable>
           </View>
 
@@ -56,7 +56,7 @@ const SettingsModal = memo(function SettingsModal({ visible, onClose }) {
               ]}
             >
               <View style={styles.settingLeft}>
-                <Ionicons
+                <Icon
                   name={
                     isMusicPlaying ? "musical-notes" : "musical-notes-outline"
                   }
@@ -102,7 +102,7 @@ const SettingsModal = memo(function SettingsModal({ visible, onClose }) {
               ]}
             >
               <View style={styles.settingLeft}>
-                <Ionicons
+                <Icon
                   name={isDragSoundEnabled ? "volume-high" : "volume-mute"}
                   size={28}
                   color={
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: theme.typography.sizes.xl,
     fontWeight: theme.typography.weights.bold,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: "FredokaOne_400Regular",
     color: theme.colors.text,
   },
   closeButton: {
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: theme.typography.sizes.md,
     fontWeight: theme.typography.weights.bold,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: "FredokaOne_400Regular",
     color: theme.colors.text,
   },
   settingDescription: {
