@@ -10,7 +10,7 @@ import {
   setAudioModeAsync,
 } from "expo-audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LEVELS, getStarsForTime } from "../data/levels";
+import { LEVELS, getStarsForTime, getPlayerLevels } from "../data/levels";
 
 const AppContext = createContext();
 
@@ -31,15 +31,22 @@ export const AppProvider = ({ children }) => {
   // Global game state
   const [gameState, setGameState] = useState("levelSelect");
   const [currentLevel, setCurrentLevel] = useState(null);
+  const [lastPlayedLevel, setLastPlayedLevel] = useState(null); // Track the last played level for UI effects
   const [levelProgress, setLevelProgress] = useState({});
   const [completionStats, setCompletionStats] = useState({ time: 0, stars: 0 });
   const [isDragSoundEnabled, setIsDragSoundEnabled] = useState(true);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [playerLevels, setPlayerLevels] = useState(LEVELS); // Will be updated with randomized levels
 
   // Audio setup
   const clickSound = require("../assets/sounds/drag.mp3");
   const player = useAudioPlayer(clickSound);
   const status = useAudioPlayerStatus(player);
+
+  // Victory sound setup
+  const victorySound = require("../assets/sounds/victory.mp3");
+  const victoryPlayer = useAudioPlayer(victorySound);
+  const victoryStatus = useAudioPlayerStatus(victoryPlayer);
 
   // Background music setup
   const themeMusic = require("../assets/sounds/theme/theme.mp3");
@@ -66,6 +73,20 @@ export const AppProvider = ({ children }) => {
     }
     hideSplash();
   }, [fontsLoaded]);
+
+  // Load player's personalized levels
+  useEffect(() => {
+    async function loadPlayerLevels() {
+      try {
+        const personalizedLevels = await getPlayerLevels();
+        setPlayerLevels(personalizedLevels);
+      } catch (error) {
+        console.error("Error loading player levels:", error);
+        // Keep default LEVELS as fallback
+      }
+    }
+    loadPlayerLevels();
+  }, []);
 
   // Configure audio on app start
   useEffect(() => {
@@ -133,6 +154,22 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const playVictorySound = async () => {
+    try {
+      if (victoryStatus.isLoaded) {
+        if (
+          victoryStatus.currentTime >= victoryStatus.duration &&
+          victoryStatus.duration > 0
+        ) {
+          await victoryPlayer.seekTo(0);
+        }
+        victoryPlayer.play();
+      }
+    } catch (error) {
+      // Silently handle victory sound playback errors
+    }
+  };
+
   const startBackgroundMusic = async () => {
     try {
       if (musicStatus.isLoaded) {
@@ -179,7 +216,10 @@ export const AppProvider = ({ children }) => {
     setIsDragSoundEnabled(!isDragSoundEnabled);
   };
 
-  const handleLevelComplete = (completionTime, stars) => {
+  const handleLevelComplete = async (completionTime, stars) => {
+    // Play victory sound
+    playVictorySound();
+
     const newProgress = { ...levelProgress };
     newProgress[currentLevel.id] = {
       unlocked: true,
@@ -187,14 +227,22 @@ export const AppProvider = ({ children }) => {
       stars: Math.max(stars, levelProgress[currentLevel.id]?.stars || 0),
     };
 
-    // Unlock next level
+    // Unlock next level (use playerLevels.length instead of LEVELS.length)
     const nextLevelId = currentLevel.id + 1;
-    if (nextLevelId <= LEVELS.length) {
+    if (nextLevelId <= playerLevels.length) {
       newProgress[nextLevelId] = {
         unlocked: true,
         completed: false,
         stars: 0,
       };
+    }
+
+    // Add the completed level to collection
+    try {
+      const { addLevelToCollection } = require("../utils/collection");
+      const result = await addLevelToCollection(currentLevel.id);
+    } catch (error) {
+      console.error("Error adding level to collection:", error);
     }
 
     saveProgress(newProgress);
@@ -209,7 +257,10 @@ export const AppProvider = ({ children }) => {
     setGameState,
     currentLevel,
     setCurrentLevel,
+    lastPlayedLevel,
+    setLastPlayedLevel,
     levelProgress,
+    playerLevels,
     fontsLoaded,
     completionStats,
 
@@ -221,6 +272,7 @@ export const AppProvider = ({ children }) => {
     loadProgress,
     saveProgress,
     playMoveSound,
+    playVictorySound,
     handleLevelComplete,
     startBackgroundMusic,
     stopBackgroundMusic,
