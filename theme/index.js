@@ -18,6 +18,7 @@ export const colors = {
   // Text Colors
   text: "#4A4A4A", // Soft Dark Gray
   textLight: "#8A8A8A", // Light Gray
+  textSecondary: "#8A8A8A", // Light Gray (alias for consistency)
   textWhite: "#FFFFFF", // White for dark backgrounds
 
   // Game-specific Colors
@@ -37,12 +38,6 @@ export const colors = {
   borderPink: "rgba(255, 179, 230, 0.5)",
   sparkle: "rgba(255, 255, 255, 0.1)",
 
-  // Level Difficulty Colors (softened)
-  easy: "#B3FFB3", // Pastel Green
-  medium: "#FFD9B3", // Pastel Orange
-  hard: "#FFB3B3", // Pastel Red
-  expert: "#E6B3FF", // Pastel Purple
-
   // Status Colors
   locked: "#E0E0E0",
   unlocked: "#B3E5FF",
@@ -50,6 +45,25 @@ export const colors = {
 
   // Toggle and Interactive States
   inactive: "#CCCCCC", // Gray for inactive toggles
+
+  // Bright icon colors for enhanced visibility
+  iconBright: {
+    home: "#FF6B9D", // Bright pink for home
+    settings: "#4ECDC4", // Bright teal for settings
+    collection: "#45B7D1", // Bright blue for collection
+    refresh: "#96CEB4", // Bright mint for refresh
+    images: "#FECA57", // Bright yellow for images
+    close: "#FF9FF3", // Bright magenta for close
+    diamond: "#FFD93D", // Bright gold for diamond
+    trophy: "#F8B500", // Bright orange-gold for trophy
+    star: "#FF6B6B", // Bright coral for star
+    rarity: {
+      common: "#A8E6CF", // Bright mint green
+      rare: "#88D8C0", // Bright aqua
+      epic: "#B19CD9", // Bright lavender
+      legendary: "#FFB74D", // Bright orange
+    },
+  },
 };
 
 export const typography = {
@@ -59,6 +73,11 @@ export const typography = {
     bold: "FredokaOne_400Regular", // Fredoka One only comes in one weight
     // Fallback to system fonts if Fredoka One fails to load
     fallback: "System",
+  },
+
+  // Common text styles with font family included
+  text: {
+    fontFamily: "FredokaOne_400Regular",
   },
 
   sizes: {
@@ -121,10 +140,78 @@ export const shadows = {
   },
 };
 
+// Rarity color function - returns appropriate color for each rarity level
+export const getRarityColor = (rarity) => {
+  switch (rarity) {
+    case "common":
+      return "#9CA3AF"; // Light Gray
+    case "rare":
+      return "#60A5FA"; // Light Blue
+    case "epic":
+      return "#A78BFA"; // Light Purple
+    case "legendary":
+      return "#F59E0B"; // Light Gold
+    default:
+      return "#9CA3AF"; // Light Gray
+  }
+};
+// export const getRarityColor = (rarity) => {
+//   switch (rarity) {
+//     case "common":
+//       return "#D1D5DB"; // Pastel Gray
+//     case "rare":
+//       return "#A5D8FF"; // Pastel Blue
+//     case "epic":
+//       return "#CDB4FF"; // Pastel Purple
+//     case "legendary":
+//       return "#FFE5A5"; // Pastel Gold
+//     default:
+//       return "#D1D5DB"; // Pastel Gray
+//   }
+// };
+
+export const iconStyles = {
+  // Standard icon sizes
+  sizes: {
+    xs: 12,
+    sm: 16,
+    md: 20,
+    lg: 24,
+    xl: 28,
+    xxl: 32,
+  },
+
+  // Common icon styles for buttons and navigation
+  button: {
+    marginHorizontal: 4,
+  },
+
+  navigationButton: {
+    marginHorizontal: 2,
+  },
+
+  // Rarity icon styles
+  rarity: {
+    marginRight: 4,
+  },
+
+  // Badge icon styles (small icons in badges)
+  badge: {
+    marginHorizontal: 2,
+  },
+
+  // Interactive icon styles (for pressable icons)
+  interactive: {
+    padding: 4,
+  },
+};
+
 export default {
   colors,
   typography,
   spacing,
   borderRadius,
   shadows,
+  iconStyles,
+  getRarityColor,
 };
