@@ -1,227 +1,45 @@
-import React, { useState, useCallback, memo } from "react";
-import { Modal, View, Text, Pressable, StyleSheet } from "react-native";
+import React, { forwardRef, useImperativeHandle, useState } from "react";
+import { View, Modal, TouchableOpacity } from "react-native";
 import Icon from "./Icon";
-import { useApp } from "../contexts/AppProvider";
+import SoundToggleRow from "./SoundToggleRow";
 import theme from "../theme";
 
-const SettingsModal = memo(function SettingsModal({ visible, onClose }) {
-  const {
-    isMusicPlaying,
-    toggleBackgroundMusic,
-    toggleDragSound,
-    isDragSoundEnabled,
-  } = useApp();
+const SettingsModal = forwardRef(({ onVolumeChange }, ref) => {
+  const [visible, setVisible] = useState(false);
 
-  const handleToggleMusic = useCallback(() => {
-    toggleBackgroundMusic();
-  }, [toggleBackgroundMusic]);
+  const open = () => setVisible(true);
+  const close = () => setVisible(false);
 
-  const handleToggleDragSound = useCallback(() => {
-    toggleDragSound();
-  }, [toggleDragSound]);
+  useImperativeHandle(ref, () => ({
+    open,
+    close,
+  }));
 
-  const handleClose = useCallback(() => {
-    onClose();
-  }, [onClose]);
+  if (!visible) return null;
 
   return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={handleClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>⚙️ Settings</Text>
-            <Pressable
-              onPress={handleClose}
-              style={({ pressed }) => [
-                styles.closeButton,
-                pressed && { opacity: 0.6, transform: [{ scale: 0.95 }] },
-              ]}
+    <Modal transparent visible={true} animationType="fade">
+      <TouchableOpacity
+        style={theme.modalStyles.overlay}
+        onPress={close}
+        activeOpacity={1}
+      >
+        <TouchableOpacity style={theme.modalStyles.content} activeOpacity={1}>
+          <View style={theme.modalStyles.header}>
+            <View style={{ flex: 1 }} />
+            <TouchableOpacity
+              onPress={close}
+              style={theme.modalStyles.closeButton}
             >
-              <Icon name="close" size={24} variant="navigationButton" bright />
-            </Pressable>
+              <Icon name="close" size={20} color={theme.colors.headerText} />
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.settingsOptions}>
-            {/* Theme Music Toggle */}
-            <Pressable
-              onPress={handleToggleMusic}
-              style={({ pressed }) => [
-                styles.settingOption,
-                pressed && { opacity: 0.6, transform: [{ scale: 0.98 }] },
-              ]}
-            >
-              <View style={styles.settingLeft}>
-                <Icon
-                  name={
-                    isMusicPlaying ? "musical-notes" : "musical-notes-outline"
-                  }
-                  size={28}
-                  color={
-                    isMusicPlaying
-                      ? theme.colors.primary
-                      : theme.colors.textLight
-                  }
-                />
-                <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Theme Music</Text>
-                  <Text style={styles.settingDescription}>
-                    {isMusicPlaying ? "Playing" : "Muted"}
-                  </Text>
-                </View>
-              </View>
-              <View
-                style={[
-                  styles.toggle,
-                  {
-                    backgroundColor: isMusicPlaying
-                      ? theme.colors.primary
-                      : theme.colors.inactive,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.toggleThumb,
-                    { transform: [{ translateX: isMusicPlaying ? 20 : 0 }] },
-                  ]}
-                />
-              </View>
-            </Pressable>
-
-            {/* Drag Sound Toggle */}
-            <Pressable
-              onPress={handleToggleDragSound}
-              style={({ pressed }) => [
-                styles.settingOption,
-                pressed && { opacity: 0.6, transform: [{ scale: 0.98 }] },
-              ]}
-            >
-              <View style={styles.settingLeft}>
-                <Icon
-                  name={isDragSoundEnabled ? "volume-high" : "volume-mute"}
-                  size={28}
-                  color={
-                    isDragSoundEnabled
-                      ? theme.colors.primary
-                      : theme.colors.textLight
-                  }
-                />
-                <View style={styles.settingText}>
-                  <Text style={styles.settingTitle}>Drag Sound Effects</Text>
-                  <Text style={styles.settingDescription}>
-                    {isDragSoundEnabled ? "Enabled" : "Disabled"}
-                  </Text>
-                </View>
-              </View>
-              <View
-                style={[
-                  styles.toggle,
-                  {
-                    backgroundColor: isDragSoundEnabled
-                      ? theme.colors.primary
-                      : theme.colors.inactive,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.toggleThumb,
-                    {
-                      transform: [{ translateX: isDragSoundEnabled ? 20 : 0 }],
-                    },
-                  ]}
-                />
-              </View>
-            </Pressable>
-          </View>
-        </View>
-      </View>
+          <SoundToggleRow onVolumeChange={onVolumeChange} />
+        </TouchableOpacity>
+      </TouchableOpacity>
     </Modal>
   );
-});
-
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.xl,
-    padding: theme.spacing.xl,
-    margin: theme.spacing.lg,
-    minWidth: 300,
-    ...theme.shadows.lg,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: theme.spacing.xl,
-  },
-  modalTitle: {
-    fontSize: theme.typography.sizes.xl,
-    fontWeight: theme.typography.weights.bold,
-    fontFamily: "FredokaOne_400Regular",
-    color: theme.colors.text,
-  },
-  closeButton: {
-    padding: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.background,
-  },
-  settingsOptions: {
-    gap: theme.spacing.lg,
-  },
-  settingOption: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.borderRadius.lg,
-  },
-  settingLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  settingText: {
-    marginLeft: theme.spacing.md,
-    flex: 1,
-  },
-  settingTitle: {
-    fontSize: theme.typography.sizes.md,
-    fontWeight: theme.typography.weights.bold,
-    fontFamily: "FredokaOne_400Regular",
-    color: theme.colors.text,
-  },
-  settingDescription: {
-    fontSize: theme.typography.sizes.sm,
-    color: theme.colors.textLight,
-    marginTop: 2,
-  },
-  toggle: {
-    width: 44,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: "center",
-    paddingHorizontal: 2,
-  },
-  toggleThumb: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: theme.colors.surface,
-    ...theme.shadows.sm,
-  },
 });
 
 export default SettingsModal;
