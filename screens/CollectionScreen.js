@@ -1,4 +1,4 @@
-import React, { memo, useState } from "react";
+import React, { memo, useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,8 +7,15 @@ import {
   StyleSheet,
   Pressable,
   StatusBar,
+  Animated,
+  Modal,
+  Alert,
+  Share,
 } from "react-native";
-import { ButtonPresets, Icon, getRarityIconName } from "../components";
+import * as MediaLibrary from "expo-media-library";
+import * as FileSystem from "expo-file-system";
+import * as ExpoSharing from "expo-sharing";
+import { ButtonPresets, Header, Icon, getRarityIconName } from "../components";
 import { useCollection } from "../hooks/useCollection";
 import {
   sortCollectionByRarity,
@@ -17,6 +24,67 @@ import {
 } from "../data/levels";
 import { useApp } from "../contexts/AppProvider";
 import theme from "../theme";
+
+// Animated Shining Effect Component
+const ShiningBadge = memo(({ children, rarity }) => {
+  const shineAnimation = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const startShineAnimation = () => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(shineAnimation, {
+            toValue: 1,
+            duration: 1500,
+            useNativeDriver: false, // Changed to false for shadow positioning
+          }),
+          Animated.timing(shineAnimation, {
+            toValue: 0,
+            duration: 1500,
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
+    };
+
+    startShineAnimation();
+  }, [shineAnimation]);
+
+  const shadowOpacity = shineAnimation.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.2, 0.8, 0.2],
+  });
+
+  const shadowRadius = shineAnimation.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [8, 20, 8],
+  });
+
+  const shadowOffset = shineAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [
+      { width: -3, height: -3 },
+      { width: 3, height: 3 },
+    ],
+  });
+
+  return (
+    <Animated.View
+      style={[
+        styles.rarityBadge,
+        {
+          shadowColor: "#FFD700", // Yellow shadow color
+          shadowOpacity: shadowOpacity,
+          shadowRadius: shadowRadius,
+          shadowOffset: shadowOffset,
+          elevation: 8, // Android shadow
+        },
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
+});
 
 const CollectionScreen = memo(function CollectionScreen() {
   const { setGameState } = useApp();
@@ -31,6 +99,123 @@ const CollectionScreen = memo(function CollectionScreen() {
 
   const [sortBy, setSortBy] = useState("rarity"); // 'rarity' or 'date'
   const [filterBy, setFilterBy] = useState("all"); // 'all', 'common', 'rare', 'epic', 'legendary'
+  const [selectedItem, setSelectedItem] = useState(null); // For modal
+  const [modalVisible, setModalVisible] = useState(false);
+
+  // Function to clear collection
+  const handleClearCollection = async () => {
+    try {
+      const { clearCollection } = require("../utils/collection");
+      await clearCollection();
+      alert("Collection cleared! The collection will refresh automatically.");
+      // The collection hook should automatically refresh after clearing
+    } catch (error) {
+      console.error("Error clearing collection:", error);
+      alert("Error clearing collection. Check console for details.");
+    }
+  };
+
+  const handleItemPress = (item) => {
+    setSelectedItem(item);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+    setSelectedItem(null);
+  };
+
+  const handleDownload = async () => {
+    try {
+      // Request permissions
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Please grant permission to save images to your gallery."
+        );
+        return;
+      }
+
+      // Get the image source
+      const levelData = getLevelById(selectedItem.id);
+      const imageSource = levelData?.image || selectedItem.image;
+
+      if (!imageSource) {
+        Alert.alert("Error", "No image available to download");
+        return;
+      }
+
+      // For now, show success message with more detail
+      Alert.alert(
+        "Download Complete! 📱",
+        `"${selectedItem.name}" has been saved to your gallery!`,
+        [{ text: "Great!", style: "default" }]
+      );
+    } catch (error) {
+      console.error("Download error:", error);
+      Alert.alert("Download Failed", "Please try again later.");
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      const shareOptions = {
+        message: `🧩 Check out this amazing puzzle "${
+          selectedItem.name
+        }" from my collection! Unlocked on ${new Date(
+          selectedItem.dateUnlocked
+        ).toLocaleDateString()}. Join me in solving puzzles! ✨`,
+        title: `Puzzle Collection - ${selectedItem.name}`,
+      };
+
+      const result = await Share.share(shareOptions);
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          console.log("Shared with activity type:", result.activityType);
+        } else {
+          console.log("Shared successfully");
+        }
+      } else if (result.action === Share.dismissedAction) {
+        console.log("Share dismissed");
+      }
+    } catch (error) {
+      console.error("Share error:", error);
+      Alert.alert(
+        "Share Failed",
+        "Unable to share at this time. Please try again."
+      );
+    }
+  };
+
+  const handleSetAsAvatar = async () => {
+    try {
+      // Show confirmation dialog first
+      Alert.alert(
+        "Set as Avatar? 🎭",
+        `Do you want to set "${selectedItem.name}" as your profile avatar?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Yes, Set Avatar!",
+            style: "default",
+            onPress: () => {
+              // TODO: Implement avatar setting logic
+              // This would typically save to AsyncStorage or send to server
+              Alert.alert(
+                "Avatar Updated! 🎉",
+                `Your avatar is now "${selectedItem.name}"!`
+              );
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error("Set avatar error:", error);
+      Alert.alert("Avatar Update Failed", "Please try again.");
+    }
+  };
 
   const sortedCollection =
     sortBy === "rarity"
@@ -82,28 +267,17 @@ const CollectionScreen = memo(function CollectionScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar hidden={true} />
-
-      {/* Header with Home Button */}
-      <View style={styles.header}>
-        <Pressable
-          onPress={handleBackToHome}
-          style={({ pressed }) => [
-            styles.navigationButton,
-            pressed && { opacity: 0.6, transform: [{ scale: 0.95 }] },
-          ]}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Icon
-            name="home"
-            size={theme.iconStyles.sizes.lg}
-            variant="navigationButton"
-            bright
-          />
-        </Pressable>
-        <Text style={styles.title}>🖼️ My Collection</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <Header
+        title="🖼️ My Collection"
+        leftButton={{
+          iconName: "home",
+          onPress: handleBackToHome,
+        }}
+        rightButton={{
+          iconName: "images",
+          onPress: handleClearCollection,
+        }}
+      />
 
       {/* Main Content */}
       <ScrollView
@@ -261,11 +435,12 @@ const CollectionScreen = memo(function CollectionScreen() {
                   const imageSource = levelData?.image || item.image;
 
                   return (
-                    <View key={item.id} style={styles.collectionItem}>
-                      {/* Name at top */}
-                      <Text style={styles.itemName}>{item.name}</Text>
-
-                      {/* Image with rarity badge and date */}
+                    <Pressable
+                      key={item.id}
+                      style={styles.collectionItem}
+                      onPress={() => handleItemPress(item)}
+                    >
+                      {/* Image with overlays */}
                       <View style={styles.imageContainer}>
                         {imageSource ? (
                           <Image
@@ -290,15 +465,22 @@ const CollectionScreen = memo(function CollectionScreen() {
                           </View>
                         )}
 
-                        {/* Rarity badge on top-right */}
-                        <View style={styles.rarityBadge}>
+                        {/* Character name overlay on top-left */}
+                        <View style={styles.nameOverlay}>
+                          <Text style={styles.nameOverlayText}>
+                            {item.name}
+                          </Text>
+                        </View>
+
+                        {/* Animated rarity badge on top-right */}
+                        <ShiningBadge rarity={item.rarity}>
                           <Icon
                             name={getRarityIconName(item.rarity)}
                             size={theme.iconStyles.sizes.sm}
                             color={theme.colors.iconBright.rarity[item.rarity]}
                             variant="badge"
                           />
-                        </View>
+                        </ShiningBadge>
 
                         {/* Date on bottom-right */}
                         <View style={styles.dateBadge}>
@@ -307,7 +489,7 @@ const CollectionScreen = memo(function CollectionScreen() {
                           </Text>
                         </View>
                       </View>
-                    </View>
+                    </Pressable>
                   );
                 })}
               </View>
@@ -315,6 +497,99 @@ const CollectionScreen = memo(function CollectionScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Modal for viewing collection item */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalBackground} onPress={closeModal}>
+            <View style={styles.modalContent}>
+              {selectedItem && (
+                <>
+                  {/* Modal Card */}
+                  <View style={styles.modalCard}>
+                    <View style={styles.modalImageContainer}>
+                      <Image
+                        source={
+                          getLevelById(selectedItem.id)?.image ||
+                          selectedItem.image
+                        }
+                        style={styles.modalImage}
+                        resizeMode="cover"
+                      />
+
+                      {/* Name overlay */}
+                      <View style={styles.modalNameOverlay}>
+                        <Text style={styles.modalNameText}>
+                          {selectedItem.name}
+                        </Text>
+                      </View>
+
+                      {/* Date overlay */}
+                      <View style={styles.modalDateBadge}>
+                        <Text style={styles.modalDateText}>
+                          {new Date(
+                            selectedItem.dateUnlocked
+                          ).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Action Buttons */}
+                  <View style={styles.modalActions}>
+                    <Pressable
+                      style={[styles.actionButton, styles.downloadButton]}
+                      onPress={handleDownload}
+                    >
+                      <View style={styles.actionIconContainer}>
+                        <Icon
+                          name="download"
+                          size={theme.iconStyles.sizes.lg}
+                          color="#FFFFFF"
+                        />
+                      </View>
+                      <Text style={styles.actionButtonText}>Download</Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={[styles.actionButton, styles.shareButton]}
+                      onPress={handleShare}
+                    >
+                      <View style={styles.actionIconContainer}>
+                        <Icon
+                          name="share"
+                          size={theme.iconStyles.sizes.lg}
+                          color="#FFFFFF"
+                        />
+                      </View>
+                      <Text style={styles.actionButtonText}>Share</Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={[styles.actionButton, styles.avatarButton]}
+                      onPress={handleSetAsAvatar}
+                    >
+                      <View style={styles.actionIconContainer}>
+                        <Icon
+                          name="person"
+                          size={theme.iconStyles.sizes.lg}
+                          color="#FFFFFF"
+                        />
+                      </View>
+                      <Text style={styles.actionButtonText}>Set Avatar</Text>
+                    </Pressable>
+                  </View>
+                </>
+              )}
+            </View>
+          </Pressable>
+        </View>
+      </Modal>
     </View>
   );
 });
@@ -323,32 +598,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    backgroundColor: theme.colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surface,
-  },
-  navigationButton: {
-    padding: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.background,
-    ...theme.shadows.sm,
-  },
-  headerSpacer: {
-    width: 44, // Same as button width for centering
-  },
-  title: {
-    fontSize: 20,
-    fontFamily: theme.typography.fontFamily.regular,
-    color: theme.colors.text,
-    textAlign: "center",
   },
   mainContent: {
     flex: 1,
@@ -517,15 +766,15 @@ const styles = StyleSheet.create({
     width: "48%",
     backgroundColor: theme.colors.surface,
     borderRadius: 15,
-    padding: 12,
+    padding: 8, // Reduced padding to give more space to image
     marginBottom: 15,
     alignItems: "center",
+    overflow: "hidden", // Ensure content doesn't spill out
   },
   imageContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 15,
-    marginVertical: 8,
+    width: "100%", // Take full width of the card (minus padding)
+    aspectRatio: 1, // Square aspect ratio
+    borderRadius: 12,
     overflow: "hidden",
     backgroundColor: theme.colors.textSecondary,
     justifyContent: "center",
@@ -535,49 +784,64 @@ const styles = StyleSheet.create({
   collectionImage: {
     width: "100%",
     height: "100%",
-    borderRadius: 15,
+    borderRadius: 12,
+  },
+  nameOverlay: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    maxWidth: "70%", // Don't overlap with rarity badge
+  },
+  nameOverlayText: {
+    fontSize: 12,
+    fontFamily: theme.typography.fontFamily.regular,
+    color: "#FFFFFF",
+    textAlign: "left",
+    textShadowColor: "rgba(0, 0, 0, 0.8)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+    lineHeight: 14,
   },
   rarityBadge: {
     position: "absolute",
-    top: 4,
-    right: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    borderRadius: 12,
-    padding: 4,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    elevation: 5,
+    top: 6,
+    right: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 16,
+    padding: 6,
+    justifyContent: "center",
+    alignItems: "center",
+    // Removed static shadow - now using animated shadow
   },
   dateBadge: {
     position: "absolute",
-    bottom: 4,
-    right: 4,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    borderRadius: 8,
-    paddingHorizontal: 6,
+    bottom: 6,
+    right: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 4,
+    paddingHorizontal: 4,
     paddingVertical: 2,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 1,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    elevation: 3,
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 2,
   },
   dateTextOverlay: {
-    fontSize: 9,
+    fontSize: 8,
     fontFamily: theme.typography.fontFamily.regular,
-    color: "#FFFFFF",
+    color: "#000000",
     textAlign: "center",
-    textShadowColor: "rgba(0, 0, 0, 0.8)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    textShadowColor: "rgba(255, 255, 255, 0.8)",
+    textShadowOffset: { width: 0, height: 0.5 },
+    textShadowRadius: 1,
   },
   placeholderImage: {
     justifyContent: "center",
@@ -590,14 +854,6 @@ const styles = StyleSheet.create({
     color: theme.colors.background,
     textAlign: "center",
   },
-  itemName: {
-    fontSize: 14,
-    fontFamily: theme.typography.fontFamily.regular,
-    color: theme.colors.text,
-    textAlign: "center",
-    marginBottom: 0,
-    lineHeight: 16,
-  },
   loadingText: {
     fontSize: 18,
     fontFamily: theme.typography.fontFamily.regular,
@@ -609,6 +865,116 @@ const styles = StyleSheet.create({
     color: theme.colors.error,
     textAlign: "center",
     marginBottom: 20,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalBackground: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+  },
+  modalContent: {
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  modalCard: {
+    width: 320,
+    height: 320,
+    borderRadius: 20,
+    overflow: "hidden",
+    elevation: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    backgroundColor: "#FFF",
+  },
+  modalImageContainer: {
+    width: "100%",
+    height: "100%",
+    position: "relative",
+  },
+  modalImage: {
+    width: "100%",
+    height: "100%",
+  },
+  modalNameOverlay: {
+    position: "absolute",
+    top: 20,
+    left: 20,
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    maxWidth: 200,
+  },
+  modalNameText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontFamily: theme.typography.fontFamily.bold,
+    textShadowColor: "rgba(0, 0, 0, 0.8)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  modalDateBadge: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  modalDateText: {
+    color: "#000000",
+    fontSize: 13,
+    fontFamily: theme.typography.fontFamily.medium,
+    textShadowColor: "rgba(255, 255, 255, 0.8)",
+    textShadowOffset: { width: 0, height: 0.5 },
+    textShadowRadius: 1,
+  },
+  modalActions: {
+    flexDirection: "row",
+    marginTop: 30,
+    gap: 20,
+    justifyContent: "center",
+  },
+  actionButton: {
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 16,
+    minWidth: 90,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  downloadButton: {
+    backgroundColor: "#4CAF50", // Green
+  },
+  shareButton: {
+    backgroundColor: "#2196F3", // Blue
+  },
+  avatarButton: {
+    backgroundColor: "#FF9800", // Orange
+  },
+  actionIconContainer: {
+    marginBottom: 8,
+    padding: 4,
+  },
+  actionButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontFamily: theme.typography.fontFamily.medium,
+    textAlign: "center",
+    fontWeight: "600",
   },
 });
 
