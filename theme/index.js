@@ -21,6 +21,11 @@ export const colors = {
   textSecondary: "#8A8A8A", // Light Gray (alias for consistency)
   textWhite: "#FFFFFF", // White for dark backgrounds
 
+  // Header Colors
+  headerBackground: "#008B8B", // Deep Teal
+  headerText: "#FFFFFF", // White text for headers
+  headerButtonBg: "#FF6B6B", // Red background for header buttons
+
   // Game-specific Colors
   tileBackground: "#FFFFFF",
   tileBorder: "#E0E0E0",
@@ -171,14 +176,14 @@ export const getRarityColor = (rarity) => {
 // };
 
 export const iconStyles = {
-  // Standard icon sizes
+  // Standard icon sizes - increased for better thumb accessibility
   sizes: {
-    xs: 12,
-    sm: 16,
-    md: 20,
-    lg: 24,
-    xl: 28,
-    xxl: 32,
+    xs: 18, // was 12, +50%
+    sm: 24, // was 16, +50%
+    md: 32, // was 20, +60%
+    lg: 36, // was 24, +50%
+    xl: 44, // was 28, +57%
+    xxl: 48, // was 32, +50%
   },
 
   // Common icon styles for buttons and navigation
@@ -206,6 +211,86 @@ export const iconStyles = {
   },
 };
 
+// Shared modal styles
+export const modalStyles = {
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  content: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    alignItems: "center",
+    minWidth: 280,
+    maxWidth: 320,
+    ...shadows.xl,
+    borderWidth: 2,
+    borderColor: colors.headerBackground, // Use teal border to match header
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginBottom: spacing.lg,
+  },
+  title: {
+    fontSize: typography.sizes.xl,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.text,
+    textAlign: "center",
+    flex: 1,
+  },
+  closeButton: {
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.headerButtonBg,
+    ...shadows.sm,
+    minWidth: 40,
+    minHeight: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  soundToggleRow: {
+    flexDirection: "row",
+    justifyContent: "space-evenly", // Use space-evenly for perfect distribution
+    alignItems: "center",
+    width: "100%",
+    marginBottom: spacing.lg,
+    paddingHorizontal: 0, // Remove any horizontal padding
+  },
+  soundButton: {
+    borderRadius: borderRadius.lg,
+    width: 60,
+    height: 60,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingLeft: 0, // Ensure no left padding
+    paddingRight: 0, // Ensure no right padding
+    paddingTop: 0, // Ensure no top padding
+    paddingBottom: 0, // Ensure no bottom padding
+    marginLeft: 0, // Ensure no left margin
+    marginRight: 0, // Ensure no right margin
+    // Remove all margins to eliminate any offset
+  },
+  buttonContainer: {
+    width: "100%",
+    alignItems: "center",
+    marginTop: spacing.md,
+  },
+  gameButton: {
+    width: 220,
+    marginBottom: spacing.md,
+  },
+  buttonRow: {
+    width: "100%",
+    marginTop: spacing.sm,
+  },
+};
+
 export default {
   colors,
   typography,
@@ -213,5 +298,6 @@ export default {
   borderRadius,
   shadows,
   iconStyles,
+  modalStyles,
   getRarityColor,
 };
