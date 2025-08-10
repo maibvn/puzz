@@ -35,7 +35,7 @@ export const AppProvider = ({ children }) => {
   const [levelProgress, setLevelProgress] = useState({});
   const [completionStats, setCompletionStats] = useState({ time: 0, stars: 0 });
   const [isDragSoundEnabled, setIsDragSoundEnabled] = useState(true);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false); // Start with music disabled for dev
   const [playerLevels, setPlayerLevels] = useState(LEVELS); // Will be updated with randomized levels
 
   // Audio setup
@@ -97,15 +97,61 @@ export const AppProvider = ({ children }) => {
           allowsRecording: false,
           shouldPlayInBackground: false,
         });
-
-        // Start background music when audio is configured
-        startBackgroundMusic();
       } catch (error) {
         // Silently handle audio configuration errors
       }
     };
     configureAudio();
   }, []);
+
+  // Start background music when music player is loaded
+  useEffect(() => {
+    const initializeMusic = async () => {
+      if (musicStatus.isLoaded && isMusicPlaying) {
+        try {
+          // Start playing - remove volume setting for now to test
+          musicPlayer.play();
+        } catch (error) {
+          // Silently handle background music errors
+        }
+      }
+    };
+    initializeMusic();
+  }, [musicStatus.isLoaded, isMusicPlaying]);
+
+  // Handle music looping
+  useEffect(() => {
+    if (musicStatus.isLoaded && isMusicPlaying) {
+      // Check if music has ended and restart it
+      if (
+        musicStatus.currentTime >= musicStatus.duration &&
+        musicStatus.duration > 0
+      ) {
+        try {
+          musicPlayer.seekTo(0);
+          musicPlayer.play();
+        } catch (error) {
+          // Silently handle music looping errors
+        }
+      }
+    }
+  }, [
+    musicStatus.currentTime,
+    musicStatus.duration,
+    isMusicPlaying,
+    musicStatus.isLoaded,
+  ]);
+
+  // Auto-start music when app loads and music becomes available
+  useEffect(() => {
+    if (musicStatus.isLoaded && isMusicPlaying && !musicStatus.isPlaying) {
+      try {
+        musicPlayer.play();
+      } catch (error) {
+        // Silently handle auto-start music errors
+      }
+    }
+  }, [musicStatus.isLoaded]);
 
   // Load progress from AsyncStorage
   useEffect(() => {
@@ -173,10 +219,6 @@ export const AppProvider = ({ children }) => {
   const startBackgroundMusic = async () => {
     try {
       if (musicStatus.isLoaded) {
-        // Set music to loop
-        musicPlayer.setIsLooping(true);
-        // Start playing at lower volume
-        musicPlayer.setVolume(0.3);
         musicPlayer.play();
         setIsMusicPlaying(true);
       }
