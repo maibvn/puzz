@@ -77,8 +77,6 @@ export default function PuzzleBoard({
                   size={tileSize}
                   image={image}
                   gridSize={gridSize}
-                  rowIdx={rowIdx}
-                  colIdx={colIdx}
                   canMove={canMove(rowIdx, colIdx)}
                   onMove={(direction) => {
                     onTileDrag(rowIdx, colIdx, direction);
@@ -98,37 +96,54 @@ export default function PuzzleBoard({
           height: tileSize,
           position: "absolute",
           top: size,
+          backgroundColor: "transparent", // Transparent background for the entire 4th row
         }}
       >
-        {/* Hidden/empty for [3][0] and [3][1] */}
-        <View style={{ width: tileSize, height: tileSize }} />
-        <View style={{ width: tileSize, height: tileSize }} />
-        {/* Show the tile in the empty slot if present, else show blank */}
-        {emptySlotTile !== null ? (
+        {/* Hidden/transparent cells for [3][0] and [3][1] - completely transparent */}
+        <View
+          style={{
+            width: tileSize,
+            height: tileSize,
+            backgroundColor: "transparent",
+            margin: 1,
+          }}
+        />
+        <View
+          style={{
+            width: tileSize,
+            height: tileSize,
+            backgroundColor: "transparent",
+            margin: 1,
+          }}
+        />
+        {/* Container for [3][2] with white background */}
+        <View
+          style={{
+            width: tileSize,
+            height: tileSize,
+            backgroundColor: theme.colors.surface, // White background only for [3][2]
+            margin: 1,
+            // borderBottomRightRadius: theme.borderRadius.md,
+            overflow: "hidden",
+            ...theme.shadows.sm,
+          }}
+        >
           <Tile
-            key={`empty-3-2-tile`}
+            key="empty-3-2"
             tile={emptySlotTile}
-            isEmpty={false}
+            isEmpty={emptySlotTile === null}
             size={tileSize}
             image={image}
             gridSize={gridSize}
-            rowIdx={3}
-            colIdx={2}
-            canMove={canMoveFromEmptySlot()}
+            canMove={emptySlotTile !== null ? canMoveFromEmptySlot() : false}
             onMove={(direction) => {
               onTileDrag(3, 2, direction);
             }}
+            style={{
+              backgroundColor: "transparent",
+            }}
           />
-        ) : (
-          <Tile
-            key="empty-3-2"
-            tile={null}
-            isEmpty={true}
-            size={tileSize}
-            image={image}
-            gridSize={gridSize}
-          />
-        )}
+        </View>
       </View>
     </View>
   );
@@ -141,8 +156,8 @@ const styles = StyleSheet.create({
   },
   board: {
     flexDirection: "column",
-    backgroundColor: theme.colors.emptySlot,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surface, // White background
+    // borderRadius: theme.borderRadius.md,
     overflow: "hidden",
     ...theme.shadows.md,
   },
