@@ -4,6 +4,7 @@ import { AppProvider, useApp } from "./contexts/AppProvider";
 import HomeScreen from "./screens/HomeScreen";
 import GameScreen from "./screens/GameScreen";
 import CollectionScreen from "./screens/CollectionScreen";
+import RankingsScreen from "./screens/RankingsScreen";
 import WinScreen from "./components/WinScreen";
 import { Button } from "./components";
 import theme from "./theme";
@@ -62,6 +63,10 @@ function AppContent() {
     return <CollectionScreen />;
   }
 
+  if (gameState === "rankings") {
+    return <RankingsScreen />;
+  }
+
   if (gameState === "won") {
     return (
       <View style={[styles.container, styles.darkContainer]}>
@@ -115,7 +120,7 @@ const styles = StyleSheet.create({
   winButtons: {
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 80, // Custom large spacing to move button down
+    marginTop: 180, // Custom large spacing to move button down
     width: "100%", // Full width to ensure centering
   },
 });
