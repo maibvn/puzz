@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { View, Image, StyleSheet, Animated, Text } from "react-native";
 import theme from "../theme";
+import LightSweepEffect from "./LightSweepEffect";
 
 export default function WinScreen({
   width,
@@ -10,8 +11,21 @@ export default function WinScreen({
   levelName,
 }) {
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const glowAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
+
+  // Star fill animations - one for each star
+  const starFillAnims = useRef([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+  ]).current;
+
+  // Star scale animations for bounce effect - start from 0 (invisible)
+  const starScaleAnims = useRef([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+  ]).current;
 
   useEffect(() => {
     // Very gentle emphasis animation sequence
@@ -32,68 +46,70 @@ export default function WinScreen({
       }),
     ]).start();
 
-    // Fast, subtle golden glow that doesn't obscure the image
-    Animated.sequence([
-      Animated.timing(glowAnim, {
-        toValue: 0.6,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(glowAnim, {
-        toValue: 0.4,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(glowAnim, {
-        toValue: 0.2,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      // Fade out quickly to show clean original image
-      Animated.timing(glowAnim, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    // Animate stars filling sequentially
+    const { stars = 0 } = completionStats || {};
+    const starAnimations = [];
 
-    // Fast, subtle rotation effect that returns to 0
-    Animated.sequence([
-      Animated.timing(rotateAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(rotateAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [scaleAnim, glowAnim, rotateAnim]);
+    for (let i = 0; i < Math.min(stars, 3); i++) {
+      starAnimations.push(
+        Animated.sequence([
+          // Wait for previous stars (reduced delay for overlap)
+          Animated.delay(i * 250), // 250ms delay - next star appears mid-animation of previous
+          // Show star by scaling and fading in simultaneously
+          Animated.parallel([
+            Animated.spring(starScaleAnims[i], {
+              toValue: 1,
+              tension: 120,
+              friction: 6,
+              useNativeDriver: true,
+            }),
+            Animated.timing(starFillAnims[i], {
+              toValue: 1,
+              duration: 500, // Longer duration so stars overlap nicely
+              useNativeDriver: true,
+            }),
+          ]),
+        ])
+      );
+    }
+
+    // Start all star animations
+    Animated.parallel(starAnimations).start();
+  }, [scaleAnim, rotateAnim, starFillAnims, starScaleAnims, completionStats]);
 
   const renderStars = () => {
     const { stars = 0 } = completionStats || {};
+
+    // Create array with only earned stars for centering
+    const earnedStarsArray = Array.from(
+      { length: Math.min(stars, 3) },
+      (_, i) => i + 1
+    );
+
     return (
-      <View style={styles.starsContainer}>
-        {[1, 2, 3].map((star) => (
-          <Text
-            key={star}
-            style={[
-              styles.star,
-              {
-                color:
-                  star <= stars ? theme.colors.accent : theme.colors.surface,
-                textShadowColor:
-                  star <= stars ? theme.colors.text : "transparent",
-                textShadowOffset: { width: 1, height: 1 },
-                textShadowRadius: 2,
-              },
-            ]}
-          >
-            ⭐
-          </Text>
-        ))}
+      <View style={[styles.starsContainer, { justifyContent: "center" }]}>
+        {earnedStarsArray.map((star, index) => {
+          return (
+            <Animated.View key={star}>
+              <Animated.Text
+                style={[
+                  styles.star,
+                  {
+                    color: theme.colors.starActive,
+                    opacity: starFillAnims[index],
+                    transform: [
+                      {
+                        scale: starScaleAnims[index],
+                      },
+                    ],
+                  },
+                ]}
+              >
+                ⭐
+              </Animated.Text>
+            </Animated.View>
+          );
+        })}
       </View>
     );
   };
@@ -132,40 +148,8 @@ export default function WinScreen({
           ]}
           resizeMode="cover"
         />
-
-        {/* VERY VISIBLE Glow effects - positioned ON TOP of image */}
-        <Animated.View
-          style={[
-            styles.glowOuter,
-            {
-              width: width + 40, // Image width + glow
-              height: width + 40, // Image height + glow (square)
-              opacity: glowAnim,
-              transform: [{ rotate: reverseRotate }],
-            },
-          ]}
-        />
-        <Animated.View
-          style={[
-            styles.glowInner,
-            {
-              width: width + 20, // Image width + smaller glow
-              height: width + 20, // Image height + smaller glow (square)
-              opacity: glowAnim,
-              transform: [{ rotate }],
-            },
-          ]}
-        />
-
-        {/* Subtle sparkle overlay */}
-        <Animated.View
-          style={[
-            styles.sparkleOverlay,
-            {
-              opacity: glowAnim,
-            },
-          ]}
-        />
+        {/* Light sweep effect for the winning image */}
+        <LightSweepEffect />
       </Animated.View>
 
       {/* Success message */}
@@ -177,7 +161,9 @@ export default function WinScreen({
           },
         ]}
       >
-        <Text style={styles.successText}>Great, you've got {levelName}!</Text>
+        <Text style={styles.successText}>
+          Great, you've got {levelName.toUpperCase()}!
+        </Text>
         {renderStars()}
       </Animated.View>
     </View>
@@ -191,29 +177,9 @@ const styles = StyleSheet.create({
     position: "relative",
     padding: theme.spacing.lg,
   },
-  glowOuter: {
-    position: "absolute",
-    top: -20, // Center the glow on the image
-    left: -20,
-    borderRadius: theme.borderRadius.lg,
-    backgroundColor: theme.colors.glowYellow,
-    borderWidth: 2,
-    borderColor: theme.colors.borderPink,
-    zIndex: 10, // Make sure it's on top
-  },
-  glowInner: {
-    position: "absolute",
-    top: -10, // Center the glow on the image
-    left: -10,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.glowPink,
-    borderWidth: 1,
-    borderColor: theme.colors.borderYellow,
-    zIndex: 9, // Make sure it's on top
-  },
   imageContainer: {
     borderRadius: theme.borderRadius.lg,
-    overflow: "visible", // Allow glow effects to show outside
+    overflow: "hidden", // Contain light sweep effect within bounds
     ...theme.shadows.lg,
     position: "relative",
   },
@@ -221,23 +187,13 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.lg,
     overflow: "hidden", // Keep image cropped properly
   },
-  sparkleOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: theme.colors.sparkle,
-    borderRadius: theme.borderRadius.lg,
-  },
   messageContainer: {
     position: "absolute",
-    bottom: -50,
+    bottom: -120, // Moved further down to save space
     alignItems: "center",
   },
   successText: {
     fontSize: theme.typography.sizes.xl,
-    fontWeight: theme.typography.weights.extrabold,
     fontFamily: theme.typography.fontFamily.regular,
     color: "#FFFFFF", // White text for dark background
     textAlign: "center",
@@ -251,8 +207,8 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xs,
   },
   star: {
-    fontSize: theme.typography.sizes.xl,
-    marginHorizontal: theme.spacing.xs / 2,
+    fontSize: theme.typography.sizes.jumbo, // Changed from xl (24) to jumbo (48)
+    marginHorizontal: theme.spacing.sm, // Increased spacing for bigger stars
   },
   subText: {
     fontSize: theme.typography.sizes.md,
