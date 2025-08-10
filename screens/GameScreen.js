@@ -10,6 +10,7 @@ import {
 import {
   Button,
   ButtonPresets,
+  Header,
   Icon,
   PuzzleBoard,
   Timer,
@@ -209,32 +210,24 @@ export default function GameScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar hidden={true} />
-      <View style={styles.header}>
-        <Pressable
-          onPress={handlePause}
-          style={({ pressed }) => [
-            styles.navigationButton,
-            pressed && { opacity: 0.6, transform: [{ scale: 0.95 }] },
-          ]}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Icon
-            name="pause"
-            size={theme.iconStyles.sizes.lg}
-            variant="navigationButton"
-            bright
-          />
-        </Pressable>
-        <Text style={styles.title}>Level {currentLevel?.id}</Text>
-        <Timer
-          key={`${currentLevel?.id}-${timerKey}`}
-          startTime={startTime}
-          onTimeUpdate={handleTimeUpdate}
-          paused={isPaused}
-          containerStyle={styles.timerContainer}
-        />
-      </View>
+      <Header
+        title={`Level ${currentLevel?.id}`}
+        leftButton={{
+          iconName: "pause",
+          onPress: handlePause,
+        }}
+        rightButton={{
+          component: (
+            <Timer
+              key={`${currentLevel?.id}-${timerKey}`}
+              startTime={startTime}
+              onTimeUpdate={handleTimeUpdate}
+              paused={isPaused}
+              containerStyle={styles.timerContainer}
+            />
+          ),
+        }}
+      />
 
       <View style={styles.gameArea}>
         <View style={styles.gameContainer}>
@@ -274,36 +267,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  header: {
-    paddingTop: 20,
-    paddingBottom: 10,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-    position: "relative",
-    backgroundColor: theme.colors.background,
-    ...theme.shadows.sm,
-  },
-  navigationButton: {
-    position: "absolute",
-    left: 20,
-    padding: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.background,
-    ...theme.shadows.sm,
-  },
-  title: {
-    fontSize: theme.typography.sizes.lg,
-    fontWeight: theme.typography.weights.bold,
-    fontFamily: theme.typography.fontFamily.regular,
-    textAlign: "center",
-    flex: 1,
-    color: theme.colors.text,
-  },
   timerContainer: {
-    position: "absolute",
-    top: 10,
-    right: 20,
+    // Custom timer container styles if needed
   },
   gameArea: {
     flex: 1,
@@ -315,9 +280,9 @@ const styles = StyleSheet.create({
     position: "relative",
     width: PUZZLE_SIZE,
     height: PUZZLE_BOARD_HEIGHT,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    ...theme.shadows.lg,
+    backgroundColor: "transparent", // Transparent background
+    // borderRadius: theme.borderRadius.lg,
+    // ...theme.shadows.lg,
     overflow: "hidden",
   },
   footer: {
