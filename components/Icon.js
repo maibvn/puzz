@@ -22,12 +22,14 @@ export default function Icon({
   ...props
 }) {
   // Get size from theme if not specified
-  const iconSize = size || theme.iconStyles.sizes.md;
+  const iconSize = size || theme.iconStyles.sizes.sm;
 
   // Get bright color if specified
   let iconColor = color;
   if (!color) {
-    if (bright && theme.colors.iconBright[name]) {
+    if (variant === "navigationButton") {
+      iconColor = theme.colors.headerText; // Use white for navigation buttons
+    } else if (bright && theme.colors.iconBright[name]) {
       iconColor = theme.colors.iconBright[name];
     } else {
       iconColor = theme.colors.text;
