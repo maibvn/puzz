@@ -8,6 +8,7 @@ import RankingsScreen from "./screens/RankingsScreen";
 import WinScreen from "./components/WinScreen";
 import { Button } from "./components";
 import theme from "./theme";
+import UserScreen from "./screens/UserScreen";
 
 const PUZZLE_SIZE = 320;
 const PUZZLE_BOARD_HEIGHT = PUZZLE_SIZE + PUZZLE_SIZE / 3;
@@ -59,9 +60,12 @@ function AppContent() {
     return <GameScreen onBackToLevels={handleBackToLevels} />;
   }
 
-  if (gameState === "collection") {
-    return <CollectionScreen />;
+  if (gameState === "user") {
+    return <UserScreen />;
   }
+  // if (gameState === "collection") {
+  //   return <CollectionScreen />;
+  // }
 
   if (gameState === "rankings") {
     return <RankingsScreen />;
