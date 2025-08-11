@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet } from "react-native";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import theme from "../theme";
 
 /**
@@ -14,7 +15,7 @@ import theme from "../theme";
 export default function Timer({
   startTime,
   onTimeUpdate,
-  format = "⏱️ {time}s",
+  format = "{time}", // default to just {time} since formatting is handled below
   containerStyle,
   textStyle,
   paused = false,
@@ -64,30 +65,51 @@ export default function Timer({
   }, [startTime, onTimeUpdate]);
 
   const formatTime = (time) => {
-    return format.replace("{time}", time.toString());
+    const minutes = Math.floor(time / 60)
+      .toString()
+      .padStart(2, "0");
+    const seconds = (time % 60).toString().padStart(2, "0");
+    return format.replace("{time}", `${minutes}:${seconds}`);
   };
 
   return (
     <View style={[styles.timerContainer, containerStyle]}>
-      <Text style={[styles.timerText, textStyle]}>
-        {formatTime(currentTime)}
-      </Text>
+      <View style={styles.timerTextWrapper}>
+        <Text style={[styles.timerText, textStyle]}>
+          {formatTime(currentTime)}
+        </Text>
+      </View>
+      <Icon
+        name="clock-outline"
+        size={20}
+        color={theme.colors.textWhite}
+        style={styles.iconStyle}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   timerContainer: {
-    backgroundColor: theme.colors.accent,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
+    backgroundColor: "transparent",
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.md,
     borderRadius: theme.borderRadius.full,
-    ...theme.shadows.sm,
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  iconStyle: {
+    marginLeft: theme.spacing.sm,
+  },
+  timerTextWrapper: {
+    minWidth: theme.spacing.xxl,
+    alignItems: "flex-end",
   },
   timerText: {
     fontSize: theme.typography.sizes.sm,
-    fontWeight: theme.typography.weights.bold,
+    // fontWeight: theme.typography.weights.bold,
     fontFamily: theme.typography.fontFamily.regular,
-    color: theme.colors.text,
+    color: theme.colors.textWhite,
   },
 });
