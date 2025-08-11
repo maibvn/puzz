@@ -256,8 +256,8 @@ export const modalStyles = {
   },
   soundToggleRow: {
     flexDirection: "row",
-    justifyContent: "space-evenly", // Use space-evenly for perfect distribution
     alignItems: "center",
+    justifyContent: "space-between",
     width: "100%",
     marginBottom: spacing.lg,
     paddingHorizontal: 0, // Remove any horizontal padding
