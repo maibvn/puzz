@@ -268,6 +268,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   timerContainer: {
+    // padding: theme.spacing.lg,
     // Custom timer container styles if needed
   },
   gameArea: {
