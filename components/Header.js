@@ -118,7 +118,8 @@ const styles = StyleSheet.create({
     height: 44, // Same as button height
   },
   title: {
-    fontSize: theme.typography.sizes.lg,
+    fontSize: theme.typography.sizes.xl,
+    // fontSize: theme.typography.sizes.lg,
     fontFamily: theme.typography.fontFamily.regular,
     color: theme.colors.headerText,
   },
