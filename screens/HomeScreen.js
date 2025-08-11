@@ -296,9 +296,12 @@ const HomeScreen = React.memo(function HomeScreen({
     settingsModalRef.current?.close();
   }, []);
 
-  const handleOpenCollection = useCallback(() => {
-    setGameState("collection");
+  const handleOpenUserProfile = useCallback(() => {
+    setGameState("user");
   }, [setGameState]);
+  // const handleOpenCollection = useCallback(() => {
+  //   setGameState("collection");
+  // }, [setGameState]);
 
   // Combined function to reset both storage and collection
   const resetAllData = useCallback(async () => {
@@ -397,7 +400,8 @@ const HomeScreen = React.memo(function HomeScreen({
 
             {/* Collection Button */}
             <Pressable
-              onPress={handleOpenCollection}
+              onPress={handleOpenUserProfile}
+              // onPress={handleOpenCollection}
               style={({ pressed }) => [
                 styles.actionButton,
                 pressed && { opacity: 0.6, transform: [{ scale: 0.95 }] },
@@ -405,7 +409,8 @@ const HomeScreen = React.memo(function HomeScreen({
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Icon
-                name="albums-outline"
+                name="person-sharp"
+                // name="albums-outline"
                 size={theme.iconStyles.sizes.lg}
                 variant="navigationButton"
                 bright
@@ -500,21 +505,15 @@ const styles = StyleSheet.create({
     marginHorizontal: theme.spacing.xs,
   },
   titleIcon: {
-    width: 48, // Bigger icon
-    height: 48, // Bigger icon
+    width: 64, // Bigger icon
+    height: 64, // Bigger icon
     marginRight: theme.spacing.md,
   },
   title: {
-    fontSize: theme.typography.sizes.lg, // Match header component size
+    fontSize: theme.typography.sizes.xxl, // Match header component size
     fontFamily: theme.typography.fontFamily.regular,
     color: theme.colors.headerText,
     textAlign: "center",
-  },
-  subtitle: {
-    fontSize: theme.typography.sizes.md,
-    color: theme.colors.textLight,
-    textAlign: "center",
-    fontWeight: theme.typography.weights.medium,
   },
   levelsGrid: {
     flexDirection: "row",
